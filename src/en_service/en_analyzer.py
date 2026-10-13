@@ -3,6 +3,10 @@ from en_service.maps import GENDER_MAP, NUMBER_MAP, CASE_MAP, MOOD_MAP, TENSE_MA
 
 _NLP = spacy.load("en_core_web_sm")
 
+OBJECT_POS = {"NOUN", "PROPN"}
+ACTION_POS = {"VERB"}
+MODIFIER_POS = {"ADJ", "ADV"}
+
 def extract_word_attributes(token) -> dict:
     morph = token.morph
 
@@ -34,20 +38,25 @@ def analyze_text(text: str) -> dict:
     modifiers = {}
 
     for token in doc:
+        if token.pos_ in OBJECT_POS:
+            bucket = objects
+        elif token.pos_ in ACTION_POS:
+            bucket = actions
+        elif token.pos_ in MODIFIER_POS:
+            bucket = modifiers
+        else:
+            # Determiners, pronouns, punctuation, numbers etc. are not dictionary entries.
+            continue
+
         item = {
-            "text": token.text,
+            # Keep capitals only for names, so "Bicycles" at the start of a sentence becomes "bicycles".
+            "text": token.text if token.pos_ == "PROPN" else token.text.lower(),
             "lemma": token.lemma_,
+            "pos": token.pos_,
             "attributes": extract_word_attributes(token)
         }
-
-        key = (token.lemma_, token.pos_)
-
-        if token.pos_ == "NOUN" or token.pos_ == "PROPN":
-            objects[key] = item
-        elif token.pos_ == "VERB":
-            actions[key] = item
-        elif token.pos_ != "VERB" and (token.dep_ != "NOUN" or token.dep_ != "PROPN"):
-            modifiers[key] = item
+        # One entry per surface form, so "coffee" and "coffees" are both kept.
+        bucket.setdefault((token.text.lower(), token.pos_), item)
 
     return {
         "objects": list(objects.values()),

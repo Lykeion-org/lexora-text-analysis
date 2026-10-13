@@ -10,11 +10,12 @@ NUMBER_MAP = {
     "Plur": 2 
 }
 
+# Values follow the WordCase enum in proto/shared/language-types.proto.
 CASE_MAP = {
-    "Nom": 1,  
-    "Acc": 2,  
-    "Gen": 3,  
-    "Dat": 4,  
+    "Nom": 1,
+    "Gen": 2,
+    "Dat": 3,
+    "Acc": 4,
 }
 
 MOOD_MAP = {
